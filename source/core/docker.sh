@@ -50,6 +50,22 @@ dc::docker::client::inspect() {
   _dc::docker::client::execute "${com[@]}" "$@"
 }
 
+dc::docker::client::login(){
+  local com=(login)
+  local registry="${1:-docker.io}"
+  local user="$2"
+  local password="$3"
+  shift
+  shift
+  shift
+
+  com+=("$registry" --username "$user" --password-stdin)
+
+  # XXX this is not currently portable and is a nasty hack
+  # We need a client method that can have stdin
+  dc::ssh::client::execute "$HADRON_TARGET_USER" "$HADRON_TARGET_HOST" "$HADRON_TARGET_IDENTITY" "$HADRON_TARGET_PORT" "docker" "${com[@]}" <<<"$password"
+#  _dc::docker::client::execute "${com[@]}" "$@" <<<"$password"
+}
 
 #######################################################################################################################
 # Private

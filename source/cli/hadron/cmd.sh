@@ -2,10 +2,9 @@
 set -o errexit -o errtrace -o functrace -o nounset -o pipefail
 
 # shellcheck disable=SC2034
-readonly CLI_DESC="fast and simple repalcement for terraform-docker-provider"
+readonly CLI_DESC="fast and simple replacement for terraform-docker-provider"
 
 dc::commander::initialize
-#dc::commander::declare::flag preserve "^$" "do not delete intermediary files" optional p
 dc::commander::declare::arg 1 "$DC_TYPE_STRING" "plan" "the plan to run"
 dc::commander::boot
 
@@ -15,4 +14,6 @@ dc::commander::boot
 }
 
 # shellcheck source=/dev/null
-. "$DC_ARG_1"
+for plan in "$@"; do
+  . "$plan"
+done

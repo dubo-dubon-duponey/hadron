@@ -48,6 +48,8 @@ _hadron::dockerclient(){
     exit 1
   }
   # Feed an empty string to stdin so that ssh does not eagerly gobble it up
+  # XXX docker login needs stdin support if we don't want to sling env variables around and leak the password
+  # Or we manipulate the docker config file directly
   dc::ssh::client::execute "$HADRON_TARGET_USER" "$HADRON_TARGET_HOST" "$HADRON_TARGET_IDENTITY" "$HADRON_TARGET_PORT" "docker" "$@" <<<""
 }
 
@@ -271,7 +273,6 @@ _hadron::deploy::unit(){
         dc::docker::client::container::remove force volumes "$candidate"
       done < <(jq -r '.[].Containers | map(.) | .[] | .Name' <(dc::docker::client::"$type"::inspect json "$name"))
 
-exit 1
       # We are destroying containers - we will need to refresh state
       _PRIVATE_HADRON_NETWORK_FORCE_REFRESH=true
       # Finally remove the object itself
@@ -312,6 +313,10 @@ hadron::deploy(){
   dc::docker::client::image::prune "" "" force >/dev/null
 
   _hadron::plan::reset
+}
+
+hadron::login(){
+  dc::docker::client::login "$@"
 }
 
 ###############################################################################
