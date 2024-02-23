@@ -53,9 +53,6 @@ Philosophy:
 
 ## Known issues
 
-Label values cannot have spaces in them.
-Something weird about docker parsing arguments after ssh escaping.
-
 Stopped containers are treated the same as others and no specific message about them is provided.
 
 ## Docker issues
@@ -109,3 +106,8 @@ We let the container runtime decide how to interpret them and what the final res
 
 Put otherwise, for us, the desired state is the set of commands we pass to the platform, not the result of applying
 these commands.
+
+## Future
+
+Look into providing frontend formats
+* https://github.com/sclevine/yj

@@ -146,7 +146,9 @@ hadron::container(){
   local image
   local sha
 
+  # XXX be a lot more defensive here, as empty descriptions will wreak havoc
   description="$(cat "${1:-/dev/stdin}")"
+  # >&2 echo "$description"
   image="$(jq -rc .image - <<<"$description")"
   sha="$(dc::crypto::shasum::compute <<<"$description")"
 
@@ -172,7 +174,8 @@ _hadron::deploy::image(){
 
   local candidate
 
-  for name in "${HADRON_TARGET_DESIRED_IMAGES[@]}"; do
+  # Dedup images, as multiple containers may use the same - this works only because images names grammar is restricted
+  for name in $(echo "${HADRON_TARGET_DESIRED_IMAGES[@]}" | tr ' ' '\n' | sort | uniq | tr '\n' ' '); do
     id="$(jq -rc .[].Id <(dc::docker::client::image::inspect json "$name"))"
     # Force pull it as a check
     dc::docker::client::image::pull "" "$name" >/dev/null
@@ -270,7 +273,7 @@ _hadron::deploy::unit(){
         [ "$candidate" ] || break
         # We are destroying containers - we will need to refresh state
         _PRIVATE_HADRON_CONTAINER_FORCE_REFRESH=true
-        dc::docker::client::container::remove force volumes "$candidate"
+        dc::docker::client::container::remove force volumes "$candidate" >/dev/null
       done < <(jq -r '.[].Containers | map(.) | .[] | .Name' <(dc::docker::client::"$type"::inspect json "$name"))
 
       # We are destroying containers - we will need to refresh state
@@ -316,7 +319,7 @@ hadron::deploy(){
 }
 
 hadron::login(){
-  dc::docker::client::login "$@"
+  dc::docker::client::login "$@" >/dev/null
 }
 
 ###############################################################################

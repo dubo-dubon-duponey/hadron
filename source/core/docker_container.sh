@@ -169,7 +169,6 @@ dc::docker::client::container::remove(){
 #      --sysctl map                       Sysctl options (default map[])
 #  -t, --tty                              Allocate a pseudo-TTY
 #      --ulimit ulimit                    Ulimit options (default [])
-#  -u, --user string                      Username or UID (format: <name|uid>[:<group|gid>])
 #      --userns string                    User namespace to use
 #      --uts string                       UTS namespace to use
 #      --volume-driver string             Optional volume driver for the container
@@ -192,7 +191,7 @@ dc::docker::client::container::remove(){
 #      --ip string                        IPv4 address (e.g., 172.30.100.104)
 #      --ip6 string                       IPv6 address (e.g., 2001:db8::33)
 #  -l, --label list                       Set meta data on a container
-
+#  -u, --user string                      Username or UID (format: <name|uid>[:<group|gid>])
 #  -e, --env list                         Set environment variables
 #      --dns list                         Set custom DNS servers
 #      --network network                  Connect a container to a network
@@ -221,7 +220,8 @@ dc::docker::client::container::run(){
   local privileged
   local cap_add
   local cap_drop
-  local device
+  local devices
+  local user
 
   local dns
   local env
@@ -241,16 +241,19 @@ dc::docker::client::container::run(){
   hostname="$(printf "%s" "$netconfig" | jq -r 'select(.plan.hostname != null).plan.hostname')"
   ip="$(printf "%s" "$netconfig" | jq -r 'select(.plan.ip != null).plan.ip')"
   ip6="$(printf "%s" "$netconfig" | jq -r 'select(.plan.ipv6 != null).plan.ip6')"
+  user="$(printf "%s" "$netconfig" | jq -r 'select(.plan.user != null).plan.user')"
 
   dc::argument::check name "$DC_TYPE_STRING" || return
   dc::argument::check image "$DC_TYPE_STRING" || return
   [ ! "$hostname" ] || dc::argument::check hostname "$DC_TYPE_STRING" || return
-  [ ! "$restart" ] || dc::argument::check restart "^(?:no$:always$:unless-stopped$:on-failure)" || return
+  [ ! "$user" ] || dc::argument::check user "$DC_TYPE_STRING" || return
+  [ ! "$restart" ] || dc::argument::check restart "^(?:no$|always$|unless-stopped$|on-failure)" || return
   [ ! "$read_only" ] || dc::argument::check read_only "$DC_TYPE_BOOLEAN" || return
   [ ! "$privileged" ] || dc::argument::check privileged "$DC_TYPE_BOOLEAN" || return
 
   com+=("--name" "$name")
   [ ! "$hostname" ] || com+=("--hostname" "$hostname")
+  [ ! "$user" ] || com+=("--user" "$user")
   [ "$read_only" == false ] || com+=("--read-only")
   [ ! "$privileged" ] || [ "$privileged" == false ] || com+=("--privileged")
   [ "$restart" ] || restart="always"
@@ -261,10 +264,10 @@ dc::docker::client::container::run(){
 
   cap_add="$(printf "%s" "$netconfig" | jq -r 'select(.plan.cap_add != null).plan.cap_add[]')"
   cap_drop="$(printf "%s" "$netconfig" | jq -r 'select(.plan.cap_drop != null).plan.cap_drop[]')"
-  group_add="$(printf "%s" "$netconfig" | jq -r 'select(.plan.group != null).plan.group[]')"
+  group_add="$(printf "%s" "$netconfig" | jq -r 'select(.plan.group_add != null).plan.group_add[]')"
   dns="$(printf "%s" "$netconfig" | jq -r 'select(.plan.dns != null).plan.dns[]')"
   env="$(printf "%s" "$netconfig" | jq -r 'select(.plan.env != null).plan.env[]')"
-  device="$(printf "%s" "$netconfig" | jq -r 'select(.plan.device != null).plan.device[]')"
+  devices="$(printf "%s" "$netconfig" | jq -r 'select(.plan.devices != null).plan.devices[]')"
   network="$(printf "%s" "$netconfig" | jq -r 'select(.plan.network != null).plan.network[]')"
   publish="$(printf "%s" "$netconfig" | jq -r 'select(.plan.publish != null).plan.publish[]')"
   tmpfs="$(printf "%s" "$netconfig" | jq -r 'select(.plan.tmpfs != null).plan.tmpfs[]')"
@@ -318,7 +321,7 @@ dc::docker::client::container::run(){
   }
 
   key=device
-  values="$device"
+  values="$devices"
   [ ! "$values" ] || {
     while read -r value; do
       com+=("--$key" "$value")
