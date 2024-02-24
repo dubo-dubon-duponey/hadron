@@ -55,6 +55,9 @@ Philosophy:
 
 Stopped containers are treated the same as others and no specific message about them is provided.
 
+There is no guardrail preventing the creation of identically named resources, thus 
+producing broken plans.
+
 ## Docker issues
 
 Filters are garbage.

@@ -19,6 +19,6 @@ defaults = {
     "/tmp:rw,noexec,nosuid,size=1000000000"
   ]
   volume        = [
-    "/data"
+    "data-raat:/data"
   ]
 }

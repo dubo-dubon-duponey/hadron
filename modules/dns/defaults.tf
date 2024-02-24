@@ -13,7 +13,11 @@ defaults = {
     "HEALTHCHECK_URL=127.0.0.1:53",
     "HEALTHCHECK_QUESTION=dns.autonomous.healthcheck.duncan.st",
     "HEALTHCHECK_TYPE=udp",
-    "METRICS_PORT=9253",
+    # XXX should only be exposed on internal network... Not clear how to do that currently...
+    # At least do not expose over ipv6
+    # Furthermore, internal com does not solve the problem of remote hosts.
+    # discovery is mandatory here, but same, not sure how to do it
+    "METRICS_LISTEN=0.0.0.0:4242",
 
     "DNS_PORT=53",
     # "DNS_OVER_GRPC_PORT=5553",
@@ -30,5 +34,8 @@ defaults = {
     "DNS_OVER_TLS_LEGO_PORT=",
     "DNS_OVER_TLS_LEGO_EMAIL=",
     "DNS_OVER_TLS_LE_USE_STAGING=false",
- ]
+  ]
+  volume      = [
+    "certs-dns:/certs"
+  ]
 }

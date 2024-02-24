@@ -160,7 +160,6 @@ dc::docker::client::container::remove(){
 #  -q, --quiet                            Suppress the pull output
 #      --rm                               Automatically remove the container when it exits
 #      --runtime string                   Runtime to use for this container
-#      --security-opt list                Security Options
 #      --shm-size bytes                   Size of /dev/shm
 #      --sig-proxy                        Proxy received signals to the process (default true)
 #      --stop-signal string               Signal to stop the container
@@ -187,7 +186,7 @@ dc::docker::client::container::remove(){
 #      --cap-add list                     Add Linux capabilities
 #      --cap-drop list                    Drop Linux capabilities
 #      --device list                      Add a host device to the container
-
+#      --security-opt list                Security Options
 #      --ip string                        IPv4 address (e.g., 172.30.100.104)
 #      --ip6 string                       IPv6 address (e.g., 2001:db8::33)
 #  -l, --label list                       Set meta data on a container
@@ -221,11 +220,13 @@ dc::docker::client::container::run(){
   local cap_add
   local cap_drop
   local devices
+  local secopts
   local user
 
   local dns
   local env
   local network
+  local pid
   local publish
   local tmpfs
   local mount
@@ -239,6 +240,7 @@ dc::docker::client::container::run(){
   restart="$(printf "%s" "$netconfig" | jq -r 'select(.plan.restart != null).plan.restart')"
 
   hostname="$(printf "%s" "$netconfig" | jq -r 'select(.plan.hostname != null).plan.hostname')"
+  pid="$(printf "%s" "$netconfig" | jq -r 'select(.plan.pid != null).plan.pid')"
   ip="$(printf "%s" "$netconfig" | jq -r 'select(.plan.ip != null).plan.ip')"
   ip6="$(printf "%s" "$netconfig" | jq -r 'select(.plan.ipv6 != null).plan.ip6')"
   user="$(printf "%s" "$netconfig" | jq -r 'select(.plan.user != null).plan.user')"
@@ -254,6 +256,7 @@ dc::docker::client::container::run(){
   com+=("--name" "$name")
   [ ! "$hostname" ] || com+=("--hostname" "$hostname")
   [ ! "$user" ] || com+=("--user" "$user")
+  [ ! "$pid" ] || com+=("--pid" "$pid")
   [ "$read_only" == false ] || com+=("--read-only")
   [ ! "$privileged" ] || [ "$privileged" == false ] || com+=("--privileged")
   [ "$restart" ] || restart="always"
@@ -268,6 +271,7 @@ dc::docker::client::container::run(){
   dns="$(printf "%s" "$netconfig" | jq -r 'select(.plan.dns != null).plan.dns[]')"
   env="$(printf "%s" "$netconfig" | jq -r 'select(.plan.env != null).plan.env[]')"
   devices="$(printf "%s" "$netconfig" | jq -r 'select(.plan.devices != null).plan.devices[]')"
+  secopts="$(printf "%s" "$netconfig" | jq -r 'select(.plan.security_opt != null).plan.security_opt[]')"
   network="$(printf "%s" "$netconfig" | jq -r 'select(.plan.network != null).plan.network[]')"
   publish="$(printf "%s" "$netconfig" | jq -r 'select(.plan.publish != null).plan.publish[]')"
   tmpfs="$(printf "%s" "$netconfig" | jq -r 'select(.plan.tmpfs != null).plan.tmpfs[]')"
@@ -322,6 +326,14 @@ dc::docker::client::container::run(){
 
   key=device
   values="$devices"
+  [ ! "$values" ] || {
+    while read -r value; do
+      com+=("--$key" "$value")
+    done <<<"$values"
+  }
+
+  key=security-opt
+  values="$secopts"
   [ ! "$values" ] || {
     while read -r value; do
       com+=("--$key" "$value")

@@ -28,6 +28,6 @@ defaults = {
   ]
 
   volume        = [
-    "/run/avahi-daemon"
+    "run-airplay:/run/avahi-daemon"
   ]
 }

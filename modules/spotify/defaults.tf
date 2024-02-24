@@ -27,7 +27,7 @@ defaults = {
   ]
 
   volume        = [
-    "/tmp"
+    "tmp-spotify:/tmp"
   ]
 
   cap_add     = []

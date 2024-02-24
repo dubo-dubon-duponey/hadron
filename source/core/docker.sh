@@ -91,19 +91,19 @@ _dc::docker::client::execute(){
     # shellcheck disable=SC2015
     printf "%s" "$err" | dc::wrapped::grep -q "docker: '.*' is not a docker command." \
       && {
-        dc::error::throw DOCKER_WRONG_COMMAND
+        dc::error::throw DOCKER_WRONG_COMMAND "$err"
         return
       } || true
     # shellcheck disable=SC2015
     printf "%s" "$err" | dc::wrapped::grep -q "unknown flag" \
       && {
-        dc::error::throw DOCKER_WRONG_SYNTAX
+        dc::error::throw DOCKER_WRONG_SYNTAX "$err"
         return
       } || true
     # shellcheck disable=SC2015
     printf "%s" "$err" | dc::wrapped::grep -q "invalid argument" \
       && {
-        dc::error::throw DOCKER_INVALID_ARGUMENT
+        dc::error::throw DOCKER_INVALID_ARGUMENT "$err"
         return
       } || true
 
