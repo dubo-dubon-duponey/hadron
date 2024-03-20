@@ -1,6 +1,6 @@
 defaults = {
   name          = "home"
-  image         = "homeassistant/home-assistant:2024.1" // 2023.8" // 2023.3" // 2022.11"
+  image         = "homeassistant/home-assistant:2024.3"
   privileged    = false
   read_only     = false
   devices       = []
