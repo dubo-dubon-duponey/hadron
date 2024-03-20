@@ -1,6 +1,6 @@
 defaults = {
   name          = "airplay"
-  image         = "dubodubonduponey/airplay:bookworm-2023-09-05"
+  image         = "dubodubonduponey/airplay:bookworm-2024-03-01"
   privileged    = false
   read_only     = true
   restart       = "always"
@@ -24,10 +24,12 @@ defaults = {
   ]
 
   tmpfs         = [
-    "/tmp:rw,noexec,nosuid,size=1000000000"
+    "/magnetar/cache:rw,uid=2000,gid=65534,noexec,nosuid,size=1000000000",
+    "/magnetar/runtime:rw,uid=2000,gid=65534,noexec,nosuid,size=1000000",
+    "/magnetar/state:rw,uid=2000,gid=65534,noexec,nosuid,size=1000000",
+    "/magnetar/state/avahi-daemon:rw,uid=101,gid=102,noexec,nosuid,size=1000000",
   ]
 
   volume        = [
-    "run-airplay:/run/avahi-daemon"
   ]
 }

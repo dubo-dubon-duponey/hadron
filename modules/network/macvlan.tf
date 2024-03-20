@@ -1,10 +1,10 @@
 defaults = {
-  name        = "hadron-bridge"
+  name        = "hadron-mac"
   driver      = "macvlan"
-  parent      = "eth0"
   attachable  = false
   internal    = false
   ipv6        = false
+  parent      = "eth0"
   ipvlan_mode = "l2"
   subnet      = []
   gateway     = []

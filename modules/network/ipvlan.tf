@@ -1,10 +1,10 @@
 defaults = {
-  name        = "hadron-bridge"
+  name        = "hadron-ip"
   driver      = "ipvlan"
-  parent      = "wlan0"
   attachable  = false
   internal    = false
   ipv6        = false
+  parent      = "wlan0"
   ipvlan_mode = ""
   subnet      = []
   gateway     = []

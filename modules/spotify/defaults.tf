@@ -1,6 +1,6 @@
 defaults = {
   name          = "spotify"
-  image         = "dubodubonduponey/spotify:bookworm-2023-09-05"
+  image         = "dubodubonduponey/spotify:bookworm-2024-03-01"
   privileged    = false
   read_only     = true
   restart       = "always"
@@ -27,7 +27,7 @@ defaults = {
   ]
 
   volume        = [
-    "tmp-spotify:/tmp"
+    "cache-spotify:/magnetar/cache"
   ]
 
   cap_add     = []

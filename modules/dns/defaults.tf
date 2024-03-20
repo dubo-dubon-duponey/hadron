@@ -1,6 +1,6 @@
 defaults = {
   name          = "dns"
-  image         = "dubodubonduponey/dns:bookworm-2023-09-05"
+  image         = "dubodubonduponey/dns:bookworm-2024-03-01"
   privileged    = false
   read_only     = true
   restart       = "always"
@@ -35,7 +35,12 @@ defaults = {
     "DNS_OVER_TLS_LEGO_EMAIL=",
     "DNS_OVER_TLS_LE_USE_STAGING=false",
   ]
+
+  # XXX this is ill fated - see above and the issues document
+  publish = ["4242:4242/tcp"]
+
   volume      = [
-    "certs-dns:/certs"
+  // Used solely when lego / certificates are in play
+    "data-dns:/magnetar/user/data"
   ]
 }

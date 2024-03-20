@@ -8,66 +8,52 @@ done
 
 bridge_nick="hadron-bridge"
 
+# Init
 hadron::init
 
+# Connect to the node
 hadron::connect "$target_user" "$target_address"
+
+# Login to registries
 hadron::login "$registry_server" "$registry_user" "$registry_pat"
 
-hadron::network <(jq \
-     --arg name "$vlan_nick" \
-     --arg parent "$vlan_parent" \
-     --argjson subnet "[\"$vlan_subnet\", \"$vlan_subnet6\"]" \
-     --argjson gateway "[\"$vlan_gateway\"]" \
-     --argjson aux_address "[\"link=$vlan_sublink\"]" \
-     --argjson ip_range "[\"$vlan_sublink/$vlan_size\"]" \
-  '
-  . += {
-    name: $name,
-    ipv6: true,
-    parent: $parent,
-    subnet: $subnet,
-    gateway: $gateway,
-    aux_address: $aux_address,
-    ip_range: $ip_range
-  }
-  ' <(hadron::module::network::defaults "$vlan_driver"))
+# Create networks
+hadron::network \
+ <(hadron::module::network::defaults "$vlan_driver") \
+ <(hadron::customize \
+  "ipv6=true" \
+  "name=$vlan_nick" \
+  "subnet=[\"$vlan_subnet\", \"$vlan_subnet6\"]" \
+  "gateway=[\"$vlan_gateway\"]" \
+  "ip_range=[\"$vlan_delegation\"]")
 
-hadron::network <(jq \
-     --arg name "$bridge_nick" \
-  '
-  . += {
-    name: $name
-  }
-  ' <(hadron::module::network::defaults "bridge"))
+hadron::network \
+ <(hadron::module::network::defaults "bridge") \
+ <(hadron::customize "name=$bridge_nick")
 
-# XXX publish does not work here, because the vlan is FIRST
-# Passing multiple networks to a docke run is ill supported, as only the first network gets any option
+# Deploy the DNS service
 hadron::container <(jq \
      --arg ip "$dns_ip" \
      --arg hostname "dns-$host_name" \
      --arg log_level "LOG_LEVEL=$log_level" \
      --argjson network '["'"$vlan_nick"'", "'"$bridge_nick"'"]' \
-     \
-     --arg dns_stuff_mdns "DNS_STUFF_MDNS=false" \
 '
 .env += [
-  $log_level,
-  $dns_stuff_mdns
+  $log_level
 ]
 |
 . += {
   ip: $ip,
   hostname: $hostname,
-  network: $network,
-  publish: ["4242:4242/tcp"]
+  network: $network
 }
 ' <(hadron::module::dns::defaults))
 
+# Deploy the monitoring service
 hadron::container <(jq \
    --arg hostname "monitor-host-$host_name" \
    --arg log_level "LOG_LEVEL=$log_level" \
    --argjson network '["'"$bridge_nick"'"]' \
-   \
 '
 .env += [
   $log_level
@@ -80,11 +66,11 @@ hadron::container <(jq \
 }
 ' <(hadron::module::monitor-host::defaults))
 
+# Deploy airplay - no DNS needed
 hadron::container <(jq \
    --arg hostname "airplay-$host_name" \
    --arg log_level "LOG_LEVEL=$log_level" \
    --argjson network '["'$vlan_nick'"]' \
-   --argjson dns '["'"$dns_ip"'"]' \
    \
    --arg mdns_name "MOD_MDNS_NAME=$station" \
    --arg device "DEVICE=$card" \
@@ -97,8 +83,7 @@ hadron::container <(jq \
 |
 . += {
   hostname: $hostname,
-  network: $network,
-  dns: $dns
+  network: $network
 }
 ' <(hadron::module::airplay::defaults))
 
@@ -106,7 +91,6 @@ hadron::container <(jq \
    --arg hostname "raat-$host_name" \
    --arg log_level "LOG_LEVEL=$log_level" \
    --argjson network '["'$vlan_nick'"]' \
-   --argjson dns '["'"$dns_ip"'"]' \
    \
 '
 .env += [
@@ -115,8 +99,7 @@ hadron::container <(jq \
 |
 . += {
   hostname: $hostname,
-  network: $network,
-  dns: $dns
+  network: $network
 }
 ' <(hadron::module::raat::defaults))
 

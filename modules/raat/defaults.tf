@@ -1,6 +1,6 @@
 defaults = {
   name          = "raat"
-  image         = "dubodubonduponey/roon:bridge-bookworm-2023-09-05"
+  image         = "dubodubonduponey/roon:bridge-bookworm-2024-03-01"
   privileged    = false
   read_only     = true
   restart       = "always"
@@ -16,9 +16,10 @@ defaults = {
   ]
 
   tmpfs         = [
-    "/tmp:rw,noexec,nosuid,size=1000000000"
+    // "/tmp:rw,uid=2000,gid=65534,noexec,nosuid,size=1000000000"
   ]
   volume        = [
-    "data-raat:/data"
+  // ID needs to persist so that restarts of the container does not fuck-up Roon config
+    "data-raat:/magnetar/user/data"
   ]
 }
