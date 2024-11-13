@@ -9,8 +9,8 @@ for module in ./modules/**/*.sh; do
 done
 
 target_user=apo
-target_address="antimatter.local"
-host_name="antimatter.local"
+target_address="amaterasu.local"
+host_name="amaterasu.local"
 
 # Generic config
 log_level=info
@@ -20,11 +20,11 @@ vlan_nick="hadron-ip-v6"
 vlan_driver="ipvlan"
 vlan_gateway="10.0.2.1"
 vlan_subnet="10.0.2.0/24"
-vlan_delegation="10.0.2.112/28"
-vlan_subnet6="fd00:babe:c0de:2112::/64"
+vlan_delegation="10.0.2.128/28"
+vlan_subnet6="fd00:babe:c0de:2128::/64"
 
 # DNS
-dns_ip="10.0.2.127"
+dns_ip="10.0.2.143"
 
 # Registry
 registry_server="docker.io"
@@ -90,7 +90,7 @@ hadron::containerOLD <(jq \
 ' <(hadron::module::monitor-host::defaults))
 
 hadron::containerOLD <(jq \
-   --arg hostname "mqtt-broker-$host_name" \
+   --arg hostname "zwave-mqtt-$host_name" \
    --arg log_level "LOG_LEVEL=$log_level" \
    --argjson network '["'"$bridge_nick"'"]' \
    \
@@ -102,28 +102,33 @@ hadron::containerOLD <(jq \
 . += {
   hostname: $hostname,
   network: $network,
-  publish: ["9001:9001/tcp", "1883:1883/tcp"]
+  publish: ["8091:8091/tcp", "3000:3000/tcp"]
 }
-' <(hadron::module::mqtt-broker::defaults))
+' <(hadron::module::zwave-mqtt::defaults))
 
+#
+
+# XXX there is some announce mechanism, though it might not be particularly useful
 hadron::containerOLD <(jq \
-   --arg hostname "zigbee-mqtt-$host_name" \
-   --arg log_level "LOG_LEVEL=$log_level" \
-   --argjson network '["'"$bridge_nick"'"]' \
-   --arg server "ZIGBEE2MQTT_CONFIG_MQTT_SERVER=mqtt://mqtt-broker" \
+   --arg hostname "ble-mqtt-$host_name" \
+   --arg log_level "LOG_LEVEL=$(printf "%s" "$log_level" | tr '[:lower:]' '[:upper:]')" \
+   --argjson network '["'"$vlan_nick"'"]' \
    \
+   --arg mqtt_host "MQTT_HOST=10.0.1.200" \
+   --arg device_name "DISCOVERY_DEVICE_NAME=BLEGateway" \
 '
 .env += [
   $log_level,
-  $server,
-  "ZIGBEE2MQTT_CONFIG_PERMIT_JOIN=true"
+  $device_name,
+  $mqtt_host
 ]
 |
 . += {
   hostname: $hostname,
   network: $network,
-  publish: ["8080:8080/tcp"]
+  publish: ["8091:8091/tcp", "3000:3000/tcp"]
 }
-' <(hadron::module::zigbee-mqtt::defaults))
+' <(hadron::module::ble-mqtt::defaults))
 
 hadron::deploy
+

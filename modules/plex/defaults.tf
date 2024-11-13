@@ -1,6 +1,6 @@
 defaults = {
   name          = "plex"
-  image         = "dubodubonduponey/plex:bookworm-2023-09-05"
+  image         = "dubodubonduponey/plex:bookworm-2024-02-20"
   privileged    = false
   read_only     = false
   restart       = "always"

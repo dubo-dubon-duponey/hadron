@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 
-foo(){
-        local input="${1:-/dev/stdin}"
-        cat "$input"
+
+
+{
+  exec ./test-sub.sh
 }
-
-
-foo <<<"blah"
-
-

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -o errexit -o errtrace -o functrace -o nounset -o pipefail
 
-hadron::container <(jq \
+hadron::containerOLD <(jq \
      --arg hostname "roon-$host_name" \
      --arg log_level "LOG_LEVEL=$log_level" \
-     --argjson network '["'"$vlan_nick"'"]' \
+     --argjson network '["'"$vlan_nick"'", "'"$internal_nick"'"]' \
      --argjson dns '["'"$dns_serv"'"]' \
      \
   '
@@ -19,7 +19,7 @@ hadron::container <(jq \
   }
   ' <(hadron::module::roon::defaults))
 
-hadron::container <(jq \
+hadron::containerOLD <(jq \
      --arg hostname "plex-$host_name" \
      --arg log_level "LOG_LEVEL=$log_level" \
      --argjson network '["'"$vlan_nick"'"]' \

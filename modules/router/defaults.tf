@@ -1,7 +1,6 @@
 defaults = {
   name       = "router"
-  image      = "dubodubonduponey/router:bookworm-2023-09-05"
-  //    image         = "dubodubonduponey/router:bullseye-2022-05-01"
+  image      = "dubodubonduponey/router:bookworm-2024-02-20"
   privileged = false
   read_only  = true
   restart    = "always"
@@ -19,8 +18,8 @@ defaults = {
     "MOD_BASICAUTH_PASSWORD=JDJhJDE0JFpWS2pWaENtVUVJeU9hRHZDVFUxeE9Cd3RjQjU5Y2RQaHZQZGp4Z3hJZURIYWZ1VWNZa3Bp",
 
     "MOD_MDNS_ENABLED=true",
-    "MOD_MDNS_HOST=routerhost",
-    "MOD_MDNS_NAME=routername",
+    "MOD_MDNS_HOST=highwayone",
+    "MOD_MDNS_NAME=Highway 1",
 
     "ADVANCED_MOD_MDNS_TYPE=_http._tcp",
     "ADVANCED_MOD_MDNS_STATION=true",
@@ -35,7 +34,7 @@ defaults = {
     "MOD_MTLS_ENABLED=true",
     "MOD_MTLS_MODE=verify_if_given",
 
-    "DOMAIN=farcloser.world",
+    "DOMAIN=duncan.st",
   ]
 
   volume = [

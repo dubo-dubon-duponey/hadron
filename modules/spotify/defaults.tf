@@ -15,15 +15,15 @@ defaults = {
     /*
     "--alsa-mixer-control", "PCM", # defaults to PCM
     "--alsa-mixer-device", "hw:0", # (from: aplay -l - defaults to default)
+    // xxx failed with dacodac digi+
     */
-    "--mixer", "alsa",
-    "--initial-volume", "75",
-    "--enable-volume-normalisation",
+    // Will default to soft mixer - which is a problem - but alsa will fail for fixed gear like digi+ & qutest
+    // "--mixer", "alsa",
+    // "--initial-volume", "75",
+    // "--enable-volume-normalisation",
   ]
 
   env = [
-    "PORT=10042",
-    "OUTPUT=alsa",
   ]
 
   volume        = [

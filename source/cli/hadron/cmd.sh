@@ -5,6 +5,7 @@ set -o errexit -o errtrace -o functrace -o nounset -o pipefail
 readonly CLI_DESC="fast and simple replacement for terraform-docker-provider"
 
 dc::commander::initialize
+dc::commander::declare::flag "secrets" ".+" "secret file to source from" optional ""
 dc::commander::declare::arg 1 "$DC_TYPE_STRING" "plan" "the plan to run"
 dc::commander::boot
 
@@ -13,7 +14,11 @@ dc::commander::boot
   exit
 }
 
+[ ! "$DC_ARG_SECRETS" ] || . "$DC_ARG_SECRETS"
+. "$DC_ARG_1"
+
 # shellcheck source=/dev/null
-for plan in "$@"; do
-  . "$plan"
-done
+#for plan in "$@"; do
+#  echo $plan
+#  . "$plan"
+#done

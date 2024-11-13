@@ -1,5 +1,5 @@
 defaults = {
-  name          = "raat"
+  name          = "roon-endpoint"
   image         = "dubodubonduponey/roon:bridge-bookworm-2024-03-01"
   privileged    = false
   read_only     = true
@@ -16,10 +16,11 @@ defaults = {
   ]
 
   tmpfs         = [
-    // "/tmp:rw,uid=2000,gid=65534,noexec,nosuid,size=1000000000"
+    // Roon lock file goes there
+    "/magnetar/runtime:rw,uid=2000,gid=65534,noexec,nosuid,size=1000000",
   ]
   volume        = [
-  // ID needs to persist so that restarts of the container does not fuck-up Roon config
-    "data-raat:/magnetar/user/data"
+    // ID needs to be persisted so that restarts of the container does not fuck-up Roon config
+    "data-roon-endpoint:/magnetar/user/data"
   ]
 }

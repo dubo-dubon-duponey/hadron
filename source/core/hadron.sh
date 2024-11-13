@@ -60,6 +60,49 @@ hadron::init(){
   dc::docker::client::init _hadron::dockerclient
 }
 
+hadron::customize(){
+  local args=()
+  local json=". += {"
+  local sep=""
+  local item
+  local key
+  local value
+
+  for item in "$@"; do
+    key="${item%%=*}"
+    value="${item#*=}"
+    if [ "${value:0:1}" == "[" ]; then
+      args+=("--argjson" "$key" "$value")
+    else
+      args+=("--arg" "$key" "$value")
+    fi
+    json+="$sep $key: \$$key"
+    sep=","
+  done
+  json+="}"
+
+  jq "${args[@]}" "$json" <<<"{}"
+}
+
+hadron::env(){
+  local args=()
+  local json=".env += ["
+  local sep=""
+  local item
+  local key
+  local value
+
+  for item in "$@"; do
+    key="${item%%=*}"
+    args+=("--arg" "$key" "$item")
+    json+="$sep \$$key"
+    sep=","
+  done
+  json+="]"
+
+  jq "${args[@]}" "$json" <<<"{}"
+}
+
 # Allow querying the list of network with caching
 hadron::network::query(){
   [ "$_PRIVATE_HADRON_NETWORK_FORCE_REFRESH" != true ] || {
@@ -86,6 +129,7 @@ hadron::connect(){
   local identity="${3:-}"
   local port="${4:-22}"
 
+  dc::logger::info "Connecting to $host"
   # Unconfigured, bail out
   [ "$HADRON_TARGET_CONFIGURED" != true ] || {
     echo "Uncommitted plan. You need to deploy first before you can switch host."
@@ -124,7 +168,22 @@ hadron::network(){
   local description
   local sha
 
-  description="$(cat "${1:-/dev/stdin}")"
+  local args=("$@")
+  local key
+  local json=''
+  local sep=
+  local inputs=()
+  for key in "${!args[@]}"; do
+    json+="$sep .[$key]"
+    sep="+"
+    inputs+=("${args[${key}]}")
+  done
+  [ "${#inputs[@]}" != 0 ] || {
+    inputs=(/dev/stdin)
+    json=".[0]"
+  }
+  description="$(jq --slurp "$json" "${inputs[@]}")" || return
+
   sha="$(dc::crypto::shasum::compute <<<"$description")"
 
   # Otherwise, we will have to create the new one
@@ -140,8 +199,46 @@ hadron::network(){
   }' "$description" "$hadron_version" "plan_name" "some_plan_descriptor" "$sha" "$HADRON_TARGET_RUN_TAG")")
 }
 
-# shellcheck disable=SC2120
 hadron::container(){
+  local description
+  local image
+  local sha
+
+  local args=("$@")
+  local key
+  local json=''
+  local sep=
+  local inputs=()
+  for key in "${!args[@]}"; do
+    json+="$sep .[$key]"
+    sep="+"
+    inputs+=("${args[${key}]}")
+  done
+  [ "${#inputs[@]}" != 0 ] || {
+    inputs=(/dev/stdin)
+    json=".[0]"
+  }
+  description="$(jq --slurp "$json" "${inputs[@]}")" || return
+  image="$(jq -rc .image - <<<"$description")"
+  sha="$(dc::crypto::shasum::compute <<<"$description")"
+
+  # Different sha, or not found to exist will have to create the new one
+  HADRON_TARGET_DESIRED_CONTAINERS+=("$(printf '{
+    "plan": %s,
+    "labels": {
+      "org.hadron.core.version": "%s",
+      "org.hadron.plan.name": "%s",
+      "org.hadron.plan.description": "%s",
+      "org.hadron.plan.sha": "%s",
+      "org.hadron.plan.tag": "%s"
+    }
+  }' "$description" "$hadron_version" "plan_name" "some_plan_descriptor" "$sha" "$HADRON_TARGET_RUN_TAG")")
+
+  HADRON_TARGET_DESIRED_IMAGES+=("$image")
+}
+
+# shellcheck disable=SC2120
+hadron::containerOLD(){
   local description
   local image
   local sha

@@ -5,13 +5,14 @@
 
   defaults = {
     name      = "share"
-    image         = "dubodubonduponey/samba:bookworm-2023-09-05"
+    image         = "dubodubonduponey/samba:bookworm-2024-02-20"
     privileged    = false
-    // XXX need to test config
+    // XXX need to test config - /etc mounts is a problem
     read_only     = false // true
     restart       = "always"
     devices       = []
-    group_add     = []
+    group_add     = [
+    ]
     command       = []
     cap_add  = [
       # Required to bind

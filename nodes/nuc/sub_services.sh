@@ -2,11 +2,11 @@
 set -o errexit -o errtrace -o functrace -o nounset -o pipefail
 
 # Working to some extent - configuration needs tweaks
-hadron::container <(jq \
-     --arg ip "10.0.4.10" \
+hadron::containerOLD <(jq \
+     --arg ip "10.0.0.9" \
      --arg hostname "router-$host_name" \
      --arg log_level "LOG_LEVEL=$log_level" \
-     --argjson network '["'"$vlan_nick"'", "'"$bridge_nick"'", "'"$internal_nick"'"]' \
+     --argjson network '["'"$vlan_nick"'", "'"$internal_nick"'"]' \
      --argjson dns '["'"$dns_serv"'"]' \
      \
   '
@@ -24,15 +24,17 @@ hadron::container <(jq \
   }
   ' <(hadron::module::router::defaults))
 
-
-# Untested
-hadron::container <(jq \
+# , "/dev/bus/usb/001/005"
+# XXX Probably does not need dns
+#     --argjson devices '["/dev/usb/lp0", "/dev/bus/usb/001/006"]' \
+hadron::containerOLD <(jq \
      --arg hostname "share-$host_name" \
      --arg log_level "LOG_LEVEL=$log_level" \
      --argjson network '["'"$vlan_nick"'"]' \
+     --argjson dns '["'"$dns_serv"'"]' \
      \
-     --arg users 'USERS=dmp anne apostasie' \
-     --arg passwords 'PASSWORDS=m8kXGjm8jWzHRRM6iwvBjNPpdks4pl FfGbDYQ8kh3_o@grUPKeygh7oN897u XgcED3bYtKmXsBR9u2iJJ!P-vtmJUE' \
+     --arg users 'USERS='"$samba_users" \
+     --arg passwords 'PASSWORDS='"$samba_passwords" \
      \
   '
   .env += [
@@ -46,15 +48,33 @@ hadron::container <(jq \
   |
   . += {
     hostname: $hostname,
-    network: $network
+    network: $network,
+    dns: $dns
   }
   ' <(hadron::module::share::defaults))
 
+# Print
+hadron::containerOLD <(jq \
+     --arg hostname "print-$host_name" \
+     --arg log_level "LOG_LEVEL=$log_level" \
+     --argjson network '["'"$vlan_nick"'"]' \
+     \
+  '
+  .env += [
+    $log_level
+  ]
+  |
+  . += {
+    hostname: $hostname,
+    network: $network,
+  }
+  ' <(hadron::module::print::defaults))
+
 # Works, but has lost the lock and many of the lights in the MQTT snaff
-hadron::container <(jq \
+hadron::containerOLD <(jq \
      --arg hostname "home-$host_name" \
      --arg log_level "LOG_LEVEL=$log_level" \
-     --argjson network '["'"$vlan_nick"'", "'"$bridge_nick"'"]' \
+     --argjson network '["'"$vlan_nick"'", "'"$internal_nick"'"]' \
      --argjson dns '["'"$dns_serv"'"]' \
      \
   '

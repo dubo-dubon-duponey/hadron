@@ -1,6 +1,6 @@
 defaults = {
   name          = "roon"
-  image         = "dubodubonduponey/roon:server-bookworm-2023-09-05"
+  image         = "dubodubonduponey/roon:server-bookworm-2024-03-01"
   privileged    = false
   read_only     = true
   restart       = "always"

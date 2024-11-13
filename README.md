@@ -5,10 +5,10 @@
 ## What is this?
 
 Hadron is a lightweight, unix command-line tool to provision containers and networks
-on a fleet of heterogenous nodes in a programmatic way.
+on a fleet of heterogeneous nodes in a programmatic way.
 
 It thrives for simplicity of use, a programmatic-first approach, speed, secure defaults,
-minimal dependencies, with a limited number of options and a relatively narrow use-case
+minimal dependencies, with a limited number of options and a narrow use-case
 (no overlay networking, no orchestration, no monitoring, no world-scale readiness).
 
 Hadron does not aim at replacing generic, established, do-it-all provisioning and infrastructure
@@ -16,8 +16,8 @@ management tools.
 
 We believe that infrastructure-as-code has reached a point of complexity and bloat
 that now diminishes its usefulness for an ever-increasing cost of ownership for most small to
-mid-size operations that do not or should not run tooling created to solve problems they will
-never have.
+mid-size operations that do not or should not run tooling created to solve problems they
+do not have, nor will ever have.
 
 Hadron grew out of our own frustration using these tools, for our own bite-size use-cases and 
 tiny infrastructure (a dozen of nodes and a few hundreds services).
@@ -26,10 +26,11 @@ We do strongly believe in containers as the right way to ship and execute softwa
 additional vendors layers that grew out of the ecosystem over the past ten years.
 And we do believe that ssh is the only thing you should ever need to manage deployment.
 
-We are not in the business of dealing with the initial provisioning of the nodes, nor in managing ssh keys (these are different problems
-altogether that are better left to other tools), and certainly not in the business of building containers either.
+We are not in the business of dealing with the initial provisioning of the nodes, nor in managing
+permissions (eg: ssh keys) (these are different problems altogether that are better left to other tools),
+and certainly not in the business of *building* containers either.
 
-What we do is deploy software on ssh+container-ready nodes.
+What we do is *deploy on ssh+container-runtime nodes*.
 
 Small, simple, does one thing well.
 

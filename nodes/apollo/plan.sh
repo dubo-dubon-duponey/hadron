@@ -32,11 +32,11 @@ hadron::network \
  <(hadron::customize "name=$bridge_nick")
 
 # Deploy the DNS service
-hadron::container <(jq \
-     --arg ip "$dns_ip" \
-     --arg hostname "dns-$host_name" \
-     --arg log_level "LOG_LEVEL=$log_level" \
-     --argjson network '["'"$vlan_nick"'", "'"$bridge_nick"'"]' \
+hadron::containerOLD <(jq \
+   --arg ip "$dns_ip" \
+   --arg hostname "dns-$host_name" \
+   --arg log_level "LOG_LEVEL=$log_level" \
+   --argjson network '["'"$vlan_nick"'", "'"$bridge_nick"'"]' \
 '
 .env += [
   $log_level
@@ -50,7 +50,7 @@ hadron::container <(jq \
 ' <(hadron::module::dns::defaults))
 
 # Deploy the monitoring service
-hadron::container <(jq \
+hadron::containerOLD <(jq \
    --arg hostname "monitor-host-$host_name" \
    --arg log_level "LOG_LEVEL=$log_level" \
    --argjson network '["'"$bridge_nick"'"]' \
@@ -67,28 +67,26 @@ hadron::container <(jq \
 ' <(hadron::module::monitor-host::defaults))
 
 # Deploy airplay - no DNS needed
-hadron::container <(jq \
-   --arg hostname "airplay-$host_name" \
-   --arg log_level "LOG_LEVEL=$log_level" \
-   --argjson network '["'$vlan_nick'"]' \
-   \
-   --arg mdns_name "MOD_MDNS_NAME=$station" \
-   --arg device "DEVICE=$card" \
-'
-.env += [
-  $log_level,
-  $device,
-  $mdns_name
-]
-|
-. += {
-  hostname: $hostname,
-  network: $network
-}
-' <(hadron::module::airplay::defaults))
+convolution="${convolution:+\"type=bind,source=/home/container/config/shairport-sync/impulse.wav,target=/magnetar/user/config/impulse.wav,readonly\"}"
+hadron::container \
+  <(hadron::module::airplay::defaults) \
+  <(hadron::env \
+    "LOG_LEVEL=$log_level" \
+    "MOD_MDNS_NAME=$station" \
+    "MOD_AUDIO_DEVICE=$card" \
+    "MOD_AUDIO_MIXER=${mixer_control:-PCM}" \
+    "MOD_AUDIO_MODE=${playback_mode:-}" \
+    "MOD_AUDIO_VOLUME_DEFAULT=${default_volume:--20.0}" \
+    "MOD_AUDIO_VOLUME_IGNORE=${ignore_volume:-}" \
+    "SHAIRPORT_GENERAL_INTERPOLATION=${interpolation:-}" ) \
+  <(hadron::customize \
+    "hostname=airplay-$host_name" \
+    'network=["'$vlan_nick'"]' \
+    'mount=['$convolution']' \
+  )
 
-hadron::container <(jq \
-   --arg hostname "raat-$host_name" \
+hadron::containerOLD <(jq \
+   --arg hostname "roon-endpoint-$host_name" \
    --arg log_level "LOG_LEVEL=$log_level" \
    --argjson network '["'$vlan_nick'"]' \
    \
@@ -101,22 +99,28 @@ hadron::container <(jq \
   hostname: $hostname,
   network: $network
 }
-' <(hadron::module::raat::defaults))
+' <(hadron::module::roon_endpoint::defaults))
 
 extra_command=""
-[ "$mixer" == "" ] || extra_command='"--alsa-mixer-control", "'"$mixer"'"'
+sep=""
+#[ "${mixer:-}" == "" ] || {
+#  extra_command+='"--mixer", "'"$mixer"'"'
+#  sep=","
+#}
+[ "$mixer_control" == "" ] || extra_command+="$sep"'"--alsa-mixer-control", "'"$mixer_control"'"'
 
-hadron::container <(jq \
+hadron::containerOLD <(jq \
    --arg hostname "spotify-$host_name" \
    --arg log_level "LOG_LEVEL=$log_level" \
    --argjson network '["'$vlan_nick'"]' \
    --argjson dns '["'"$dns_ip"'"]' \
    \
    --arg mdns_name "MOD_MDNS_NAME=$station" \
-   --arg device "DEVICE=$card" \
-   --arg display "DISPLAY_ENABLED=$display_enabled" \
-   --arg client_id "SPOTIFY_CLIENT_ID=${spotify_id:-}" \
-   --arg client_secret "SPOTIFY_CLIENT_SECRET=${spotify_secret:-}" \
+   --arg device "MOD_AUDIO_DEVICE=$card" \
+   --arg display "_EXPERIMENTAL_DISPLAY_ENABLED=$display_enabled" \
+   --arg client_id "_EXPERIMENTAL_SPOTIFY_CLIENT_ID=${spotify_id:-}" \
+   --arg client_secret "_EXPERIMENTAL_SPOTIFY_CLIENT_SECRET=${spotify_secret:-}" \
+   --arg mixer "SPOTIFY_MIXER=$mixer" \
    --argjson extra_command "[$extra_command]" \
 '
 .env += [
@@ -125,7 +129,8 @@ hadron::container <(jq \
   $mdns_name,
   $display,
   $client_id,
-  $client_secret
+  $client_secret,
+  $mixer
 ]
 |
 . += {

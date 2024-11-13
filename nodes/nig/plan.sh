@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 set -o errexit -o errtrace -o functrace -o nounset -o pipefail
 
+# Nightingale is a RPI4 with Amp2
+# So:
+# - powerful enough for soxr
+# - shared alsa volume control
+
 target_user=apo
 target_address="nightingale.local"
 host_name="nightingale.local"
 
 # Generic config
-log_level=warning
+log_level=info
 
 # Network
 vlan_nick="hadron-mac-v6"
@@ -26,7 +31,14 @@ registry_pat="dckr_pat_8JL7-d424bT0pQqctrWrZgq8MFU"
 
 card="default:CARD=sndrpihifiberry"
 station="Nightingale"
-mixer="Digital"
+mixer="alsa"
+mixer_control="Digital"
 display_enabled=false
+
+interpolation=soxr
+playback_mode=mono
+convolution=yes
+convolution_file=/magnetar/user/config/impulse.wav
+default_volume="-20.0"
 
 . ./nodes/apollo/plan.sh
