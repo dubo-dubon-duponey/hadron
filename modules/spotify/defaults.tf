@@ -1,6 +1,6 @@
 defaults = {
   name          = "spotify"
-  image         = "dubodubonduponey/spotify:bookworm-2024-03-01"
+  image         = "dubodubonduponey/spotify:bookworm-2024-09-01"
   privileged    = false
   read_only     = true
   restart       = "always"

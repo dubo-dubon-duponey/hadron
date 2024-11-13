@@ -1,6 +1,6 @@
 defaults = {
   name      = "print"
-  image         = "dubodubonduponey/cups:bookworm-2024-03-01"
+  image         = "dubodubonduponey/cups:bookworm-2024-09-01"
   privileged    = false
   // XXX breaks cupctl - too lazy to figure out why - so, read write it is for now
   read_only     = false
