@@ -10,7 +10,7 @@ done
 # 10.0.0.242
 
 target_user=dmp
-target_address="10.0.0.96"
+target_address="nucomedon.local"
 host_name="nucomedon.local"
 
 # Generic config
@@ -28,7 +28,14 @@ vlan_driver="macvlan"
 vlan_gateway="10.0.0.1"
 vlan_subnet="10.0.0.0/24"
 vlan_delegation="10.0.0.96/28"
-aux_address="link=10.0.0.96"
+# https://blog.oddbit.com/post/2018-03-12-using-docker-macvlan-networks/
+# ip link del dubo-shim 2>/dev/null
+# ip link add dubo-shim link eno1 type macvlan  mode bridge
+# ip addr add 10.0.0.111/32 dev dubo-shim
+# ip link set dubo-shim up
+# sudo ip route add 10.0.0.5/32 dev dubo-shim
+#### ip route add 10.0.0.96/28 dev dubo-shim
+aux_address="link=10.0.0.111"
 vlan_subnet6="fd00:babe:c0de:0096::/64"
 
 # DNS
@@ -37,11 +44,9 @@ dns_peep="10.0.0.6"
 dns_thin="10.0.0.7"
 
 # Registry
-registry_server="docker.io"
-registry_user="dubodubonduponey"
+registry_server="registry-1.docker.io"
 
 registry_server2="ghcr.io"
-registry_user2="apostasie"
 
 
 # DNS
@@ -54,11 +59,12 @@ plex_password="LW-kdb4f8Wuhxe.YUcu7fjFyBg@KXK"
 domain="sinema.duncan.st"
 
 hadron::connect "$target_user" "$target_address"
-hadron::login "$registry_server" "$registry_user" "$registry_pat"
-hadron::login "$registry_server2" "$registry_user2" "$registry_pat2"
+
+hadron::login "$registry_server" "$secrets_registry_user" "$secrets_registry_pat"
+hadron::login "$registry_server2" "$secrets_registry_user_ghcr" "$secrets_registry_pat_ghcr"
 
 
-hadron::network \
+hadron::require::network \
  <(hadron::module::network::defaults "$vlan_driver") \
  <(hadron::customize \
   "ipv6=true" \
@@ -69,14 +75,14 @@ hadron::network \
   "aux_address=[\"$aux_address\"]" \
   "parent=$vlan_parent")
 
-hadron::network \
+hadron::require::network \
  <(hadron::module::network::defaults "bridge") \
  <(hadron::customize \
   "name=$internal_nick" \
   "internal=true" \
  )
 
-hadron::network \
+hadron::require::network \
  <(hadron::module::network::defaults "bridge") \
  <(hadron::customize \
   "name=$bridge_nick" \

@@ -10,7 +10,12 @@ defaults = {
   cap_add       = ["NET_BIND_SERVICE"]
   port          = 443
 
+  volume       = [
+    "xxx-fixroon:/magnetar"
+  ]
+
   tmpfs         = [
+    "/tmp:rw,noexec,nosuid,size=1000000000"
   ]
 
   mount        = [

@@ -42,15 +42,33 @@ _hadron::plan::reset(){
   _PRIVATE_HADRON_CONTAINER_CACHE=
 }
 
+# XXX very dirty temp hack
+_hadron::underlying(){
+  local one="$1"
+  local two="$2"
+  local three="$3"
+  local four="$4"
+  shift
+  shift
+  shift
+  shift
+  # XXX -J sshweet
+  dc::ssh::client::execute "$one" "$two" "$three" "$four" "$@" <<<"${XXXUBERDIRTY:-}"
+}
+
 _hadron::dockerclient(){
   [ "$HADRON_TARGET_CONFIGURED" != "" ] || {
     echo "no ssh host configured. call hadron::connect first"
     exit 1
   }
+
   # Feed an empty string to stdin so that ssh does not eagerly gobble it up
   # XXX docker login needs stdin support if we don't want to sling env variables around and leak the password
   # Or we manipulate the docker config file directly
-  dc::ssh::client::execute "$HADRON_TARGET_USER" "$HADRON_TARGET_HOST" "$HADRON_TARGET_IDENTITY" "$HADRON_TARGET_PORT" "docker" "$@" <<<""
+#  dc::ssh::client::execute "$HADRON_TARGET_USER" "$HADRON_TARGET_HOST" "$HADRON_TARGET_IDENTITY" "$HADRON_TARGET_PORT" "docker" "$@" <<<""
+#  dc::ssh::client::execute "$HADRON_TARGET_USER" "$HADRON_TARGET_HOST" "$HADRON_TARGET_IDENTITY" "$HADRON_TARGET_PORT" -J sshweet "/home/apo/nerdctl" "$@" <<<""
+  _hadron::underlying "$HADRON_TARGET_USER" "$HADRON_TARGET_HOST" "$HADRON_TARGET_IDENTITY" "$HADRON_TARGET_PORT" "sudo" "/home/apo/nerdctl" "$@"
+#  _hadron::underlying "$HADRON_TARGET_USER" "$HADRON_TARGET_HOST" "$HADRON_TARGET_IDENTITY" "$HADRON_TARGET_PORT" "docker" "$@"
 }
 
 hadron::init(){
@@ -104,7 +122,7 @@ hadron::env(){
 }
 
 # Allow querying the list of network with caching
-hadron::network::query(){
+hadron::query::network(){
   [ "$_PRIVATE_HADRON_NETWORK_FORCE_REFRESH" != true ] || {
     _PRIVATE_HADRON_NETWORK_FORCE_REFRESH=
     _PRIVATE_HADRON_NETWORK_CACHE="$(dc::docker::client::network::list json)"
@@ -112,7 +130,7 @@ hadron::network::query(){
   printf "%s" "$_PRIVATE_HADRON_NETWORK_CACHE"
 }
 
-hadron::container::query(){
+hadron::query::container(){
   [ "$_PRIVATE_HADRON_CONTAINER_FORCE_REFRESH" != true ] || {
     _PRIVATE_HADRON_CONTAINER_FORCE_REFRESH=
     _PRIVATE_HADRON_CONTAINER_CACHE="$(dc::docker::client::container::list all json)"
@@ -136,17 +154,21 @@ hadron::connect(){
     exit 1
   }
 
+  # XXX FIXME - calling to ssh client that way prevents any specifics of the hadron client implemented above to work
+  # For eg: jumpboxes, etc
   # Check that SSH is working - let it through if failing
-  dc::ssh::client::execute "$user" "$host" "$identity" "$port" exit 0 || return
+  _hadron::underlying "$user" "$host" "$identity" "$port" exit 0 || return
 
   # Check Docker is there
-  dc::ssh::client::execute "$user" "$host" "$identity" "$port" command -v docker >/dev/null || {
+  # XXX make this configurable so we can use containerd
+  _hadron::underlying "$user" "$host" "$identity" "$port" command -v /home/apo/nerdctl >/dev/null || {
     echo "Failed to find the docker binary on the remote."
     exit 1
   }
 
   # Check that docker info is working
-  dc::ssh::client::execute "$user" "$host" "$identity" "$port" docker info >/dev/null 2>&1 || {
+  # See above
+  _hadron::underlying "$user" "$host" "$identity" "$port" sudo /home/apo/nerdctl info >/dev/null 2>&1 || {
     echo "Failed to run docker info on the remote. Is the daemon started?"
     exit 1
   }
@@ -162,9 +184,9 @@ hadron::connect(){
   HADRON_TARGET_CONFIGURED=true
 }
 
-# Networks do not depend on nothing, we can resolve right away
+# Networks do not depend on anything, we can resolve right away
 # shellcheck disable=SC2120
-hadron::network(){
+hadron::require::network(){
   local description
   local sha
 
@@ -273,10 +295,14 @@ _hadron::deploy::image(){
 
   # Dedup images, as multiple containers may use the same - this works only because images names grammar is restricted
   for name in $(echo "${HADRON_TARGET_DESIRED_IMAGES[@]}" | tr ' ' '\n' | sort | uniq | tr '\n' ' '); do
-    id="$(jq -rc .[].Id <(dc::docker::client::image::inspect json "$name"))"
+    # XXX FIXME Docker has an array - containerd a string
+    #id="$(jq -rc .[].Id <(dc::docker::client::image::inspect json "$name"))"
+    id="$(jq -rc .Id <(dc::docker::client::image::inspect json "$name"))"
     # Force pull it as a check
     dc::docker::client::image::pull "" "$name" >/dev/null
-    new_id="$(jq -rc .[].Id <(dc::docker::client::image::inspect json "$name"))"
+    # XXX FIXME Docker has an array - containerd a string
+    #new_id="$(jq -rc .[].Id <(dc::docker::client::image::inspect json "$name"))"
+    new_id="$(jq -rc .Id <(dc::docker::client::image::inspect json "$name"))"
     # If we HAD an image like that, go cleanup the containers
     if [ "$id" ] && [ "$new_id" != "$id" ]; then
       # List the containers using the old version of the image and remove them
@@ -294,7 +320,7 @@ _hadron::deploy::image(){
       dc::docker::client::image::remove "" "" "$id" >/dev/null
     fi
   done
-#  done < <(jq -rc '. | select(.Labels | test("(^|,)org.hadron.plan.sha=.+")) | .Image' <(hadron::container::query))
+#  done < <(jq -rc '. | select(.Labels | test("(^|,)org.hadron.plan.sha=.+")) | .Image' <(hadron::query::container))
 }
 
 _hadron::deploy::unit(){
@@ -325,13 +351,25 @@ _hadron::deploy::unit(){
     # Extract the name and sha of the object we want to add
     name="$(jq -rc '.plan.name' - <<<"$definition")"
     sha="$(jq -rc '.labels."org.hadron.plan.sha"' - <<<"$definition")"
-
     dc::logger::info " > examining $name ($sha)"
     # If there is an existing object that matches the sha, mark it as "keep"
-    # shellcheck disable=SC2015
-    [ "$(jq --arg sha "$sha" '. | select(.Labels | test("(^|,)org.hadron.plan.sha=" + $sha))' <(hadron::"$type"::query))" ] && {
-      dc::logger::info " > found it - nothing to be done"
-      keeplist+=("$name")
+    # Nerdctl is inconsistent on the treatment of labels: https://github.com/containerd/nerdctl/issues/2987
+    # It could be either a string of key=value, or an object
+    [ "$(jq --arg sha "$sha" '. | select(.Labels."org.hadron.plan.sha" | test("^" + $sha + "$"))' <(hadron::query::"$type") ||
+         jq --arg sha "$sha" '. | select(.Labels | test("(^|,)org.hadron.plan.sha=" + $sha))?' <(hadron::query::"$type"))" ] &&
+    {
+      # XXX implement pruning of stopped and created containers here
+      # State != running
+      if [ "$type" != container ] || \
+#        [ "$(jq -rc --arg sha "$sha" '. | select(.Labels | test("(^|,)org.hadron.plan.sha=" + $sha)) | .State' <(hadron::query::"$type"))" == "running" ]; then
+#        [ "$(jq -rc --arg sha "$sha" '. | select(.Labels."org.hadron.plan.sha" | test("^" + $sha + "$")) | .State' <(hadron::query::"$type"))" == "running" ]; then
+        [ "$(jq -rc --arg sha "$sha" '. | select(.Labels."org.hadron.plan.sha" | test("^" + $sha + "$")) | select(.Status | test("^Up.*"))' <(hadron::query::"$type"))" ]; then
+        dc::logger::info " > entity to kept as-is"
+        keeplist+=("$name")
+      else
+        dc::logger::info " > stopped or created container - drop it, recreate it"
+        addlist+=("$definition")
+      fi
     } || {
       dc::logger::info " > will need to create it"
       addlist+=("$definition")
@@ -356,7 +394,8 @@ _hadron::deploy::unit(){
       dc::logger::info " > to be removed"
       rmlist+=("$name")
     }
-  done < <(jq -rc '. | select(.Labels | test("(^|,)org.hadron.plan.sha=.+")) | .'"$key" <(hadron::"$type"::query))
+#  done < <(jq -rc '. | select(.Labels | test("(^|,)org.hadron.plan.sha=.+"))? | .'"$key" <(hadron::query::"$type"))
+  done < <(jq -rc '. | select(.Labels."org.hadron.plan.sha" | test(".+")) | .'"$key" <(hadron::query::"$type"))
 
   dc::logger::info "3. Garbage collecting"
   # Third, do the actual cleanup

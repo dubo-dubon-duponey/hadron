@@ -63,7 +63,12 @@ dc::docker::client::login(){
 
   # XXX this is not currently portable and is a nasty hack
   # We need a client method that can have stdin
-  dc::ssh::client::execute "$HADRON_TARGET_USER" "$HADRON_TARGET_HOST" "$HADRON_TARGET_IDENTITY" "$HADRON_TARGET_PORT" "docker" "${com[@]}" <<<"$password"
+  # dc::ssh::client::execute "$HADRON_TARGET_USER" "$HADRON_TARGET_HOST" "$HADRON_TARGET_IDENTITY" "$HADRON_TARGET_PORT" "docker" "${com[@]}" <<<"$password"
+  XXXUBERDIRTY="$password"
+  _hadron::underlying  "$HADRON_TARGET_USER" "$HADRON_TARGET_HOST" "$HADRON_TARGET_IDENTITY" "$HADRON_TARGET_PORT" "sudo" "/home/apo/nerdctl" "${com[@]}"
+  # <<<"$password"
+  # shellcheck disable=SC2034
+  XXXUBERDIRTY=
 #  _dc::docker::client::execute "${com[@]}" "$@" <<<"$password"
 }
 

@@ -5,7 +5,9 @@ defaults = {
   internal    = false
   ipv6        = false
   parent      = "eth0"
-  ipvlan_mode = "l2"
+  # Docker only
+  # ipvlan_mode = "l2"
+  # Containerd / CNI does not support the option
   subnet      = []
   gateway     = []
   aux_address = []

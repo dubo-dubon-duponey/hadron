@@ -9,7 +9,7 @@ on a fleet of heterogeneous nodes in a programmatic way.
 
 It thrives for simplicity of use, a programmatic-first approach, speed, secure defaults,
 minimal dependencies, with a limited number of options and a narrow use-case
-(no overlay networking, no orchestration, no monitoring, no world-scale readiness).
+(no overlay networking, no orchestration, no monitoring, no "world-scale").
 
 Hadron does not aim at replacing generic, established, do-it-all provisioning and infrastructure
 management tools.
@@ -30,7 +30,7 @@ We are not in the business of dealing with the initial provisioning of the nodes
 permissions (eg: ssh keys) (these are different problems altogether that are better left to other tools),
 and certainly not in the business of *building* containers either.
 
-What we do is *deploy on ssh+container-runtime nodes*.
+What we do is *deploy* on *ssh+containerd-ready nodes*.
 
 Small, simple, does one thing well.
 

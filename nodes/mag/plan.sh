@@ -20,13 +20,17 @@ vlan_subnet6="fd00:babe:c0de:0080::/64"
 dns_ip="10.0.0.95"
 
 # Registry
-registry_server="docker.io"
-registry_user="dubodubonduponey"
-registry_pat="dckr_pat_8JL7-d424bT0pQqctrWrZgq8MFU"
+registry_server="registry-1.docker.io"
 
 card="default:CARD=Mojo"
+
 station="Magnetar"
+mixer=""
 mixer_control=""
+
+ignore_volume=yes
+
+# XXX deprecated - move elsewhere
 display_enabled=false
 
 ignore_volume=yes

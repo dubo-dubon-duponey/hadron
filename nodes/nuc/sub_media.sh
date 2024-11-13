@@ -4,12 +4,14 @@ set -o errexit -o errtrace -o functrace -o nounset -o pipefail
 hadron::containerOLD <(jq \
      --arg hostname "roon-$host_name" \
      --arg log_level "LOG_LEVEL=$log_level" \
+     --arg dis "MOD_HTTP_ENABLED=false" \
      --argjson network '["'"$vlan_nick"'", "'"$internal_nick"'"]' \
      --argjson dns '["'"$dns_serv"'"]' \
      \
   '
   .env += [
-    $log_level
+    $log_level,
+    $dis
   ]
   |
   . += {

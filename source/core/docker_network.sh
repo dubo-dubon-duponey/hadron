@@ -100,7 +100,6 @@ dc::docker::client::network::inspect() {
 
 
 # Missing
-#      --ipam-driver string   IP Address Management Driver (default "default")
 #      --ipam-opt map         Set IPAM driver specific options (default map[])
 #      --scope string         Control the network's scope
 # XXX not proper:
@@ -123,6 +122,8 @@ dc::docker::client::network::create() {
 #      --ipv6                 Enable IPv6 networking
   local ipv6
 
+  local ipam_driver
+
   local subnet
   local gateway
   local ip_range
@@ -134,6 +135,8 @@ dc::docker::client::network::create() {
   # Ensure we avoid nasty side effects ("null" being a valid string)
   name="$(printf "%s" "$netconfig" | jq -r 'select(.plan.name != null).plan.name')"
   driver="$(printf "%s" "$netconfig" | jq -r 'select(.plan.driver != null).plan.driver')"
+
+  ipam_driver="$(printf "%s" "$netconfig" | jq -r 'select(.plan.ipam_driver != null).plan.ipam_driver')"
 
   # It doesn't really matter if we get a null or an empty value here, it will fail validating as a boolean
   attachable="$(printf "%s" "$netconfig" | jq -r 'select(.plan.attachable != null).plan.attachable')"
@@ -156,6 +159,8 @@ dc::docker::client::network::create() {
   [ "$internal" == false ] || com+=("--internal")
   [ "$attachable" == false ] || com+=("--attachable")
   [ "$ipv6" == false ] || com+=("--ipv6")
+
+  [ "$ipam_driver" == "" ] || com+=("--ipam-driver" "$ipam_driver")
 
 #      --subnet strings       Subnet in CIDR format that represents a network segment
 #      --gateway strings      IPv4 or IPv6 Gateway for the master subnet

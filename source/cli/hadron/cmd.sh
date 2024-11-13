@@ -16,9 +16,3 @@ dc::commander::boot
 
 [ ! "$DC_ARG_SECRETS" ] || . "$DC_ARG_SECRETS"
 . "$DC_ARG_1"
-
-# shellcheck source=/dev/null
-#for plan in "$@"; do
-#  echo $plan
-#  . "$plan"
-#done
